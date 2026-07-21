@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PharmaCare Frontend
+
+The public pharmacy landing page and the `/admin` management panel, built with Next.js (App
+Router) and Tailwind CSS.
+
+## Prerequisites
+
+- Node.js 18+
+- The backend running (see `../backend/README.md`) — required for the site to show real data.
+
+## Environment Variables
+
+Create `.env.local` in this folder (already present in this repo for local dev):
+
+```bash
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
+```
+
+Point this at wherever the Django API is reachable — `http://127.0.0.1:8000/api` for a local
+backend, or your deployed backend's URL if you deployed it.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) for the landing page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Admin Panel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- URL: `http://localhost:3000/admin`
+- Gated by login at `/admin/login` — log in with a Django staff user (see backend README for
+  creating one).
+- Manage products (rich-text description via Quill, required image upload, featured toggle),
+  testimonials, and view/delete contact messages.
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+frontend/src/
+├── app/
+│   ├── page.tsx              # Public landing page
+│   └── admin/
+│       ├── login/            # Login page (no sidebar)
+│       └── (dashboard)/      # Dashboard, products, testimonials, messages (sidebar layout)
+├── components/                # Public + admin/ (admin-only) components
+├── lib/
+│   ├── api.ts                 # Typed API client for all backend endpoints
+│   ├── auth.ts                # Admin token cookie helpers
+│   └── types.ts               # Shared TypeScript types
+└── proxy.ts                    # Route guard: redirects unauthenticated /admin/* to /admin/login
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploying to Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Push this repo to GitHub.
+2. Import the project in Vercel, setting the **root directory** to `frontend`.
+3. Add an environment variable in the Vercel project settings:
+   `NEXT_PUBLIC_API_URL` = the public URL of your backend (e.g.
+   `https://your-backend.onrender.com/api`).
+4. Deploy. The admin panel is included automatically at `/admin` on the same deployment.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Important:** if the backend is only run locally (not deployed), the live Vercel URL will not
+be able to reach it — `NEXT_PUBLIC_API_URL` is baked in at build time and can't point at an
+evaluator's own machine. In that case, plan to demo the live site's static shell plus a full
+local run (`npm run dev` + local backend) for the working data flows, per the assignment's
+"backend can be deployed or run locally" allowance.
