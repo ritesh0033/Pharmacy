@@ -13,6 +13,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=True)
+
     class Meta:
         model = Product
         fields = ['name', 'description', 'price', 'image', 'is_featured']

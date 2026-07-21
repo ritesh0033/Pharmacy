@@ -1,6 +1,9 @@
-from rest_framework import viewsets, mixins, status
+from django.contrib.auth import authenticate
+from rest_framework import viewsets, mixins, status, permissions
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from .models import Product, Testimonial, Contact
 from .services import ProductService, TestimonialService, ContactService
 from .serializers import (
@@ -15,6 +18,23 @@ from .serializers import (
 )
 
 
+class LoginView(APIView):
+    """POST /api/auth/login/ -> {token, username} for the admin panel."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        username = request.data.get("username", "")
+        password = request.data.get("password", "")
+        user = authenticate(request, username=username, password=password)
+        if user is None or not user.is_staff:
+            return Response(
+                {"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED
+            )
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({"token": token.key, "username": user.username})
+
+
 class ProductViewSet(viewsets.ModelViewSet):
     """
     GET    /products            -> list
@@ -27,6 +47,12 @@ class ProductViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Product.objects.all()
+
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
+
     def get_serializer_class(self):
         if self.action == "create":
             return ProductCreateSerializer
@@ -39,7 +65,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         product = ProductService.create_product(serializer.validated_data)
         return Response(
-            ProductSerializer(product).data, status=status.HTTP_201_CREATED
+
+            ProductSerializer(product, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
         )
 
     def update(self, request, *args, **kwargs):
@@ -48,7 +76,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(product, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         product = ProductService.update_product(product, serializer.validated_data)
-        return Response(ProductSerializer(product).data)
+        return Response(ProductSerializer(product, context={"request": request}).data)
 
     def destroy(self, request, *args, **kwargs):
         product = self.get_object()
@@ -58,7 +86,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def featured(self, request):
         featured = ProductService.list_featured()
-        serializer = ProductSerializer(featured, many=True)
+        serializer = ProductSerializer(featured, many=True, context={"request": request})
         return Response(serializer.data)
 
 
@@ -74,6 +102,11 @@ class TestimonialViewSet(viewsets.ModelViewSet):
 
     queryset = Testimonial.objects.all()
 
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
+
     def get_serializer_class(self):
         if self.action == "create":
             return TestimonialCreateSerializer
@@ -86,7 +119,8 @@ class TestimonialViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         testimonial = TestimonialService.create_testimonial(serializer.validated_data)
         return Response(
-            TestimonialSerializer(testimonial).data, status=status.HTTP_201_CREATED
+            TestimonialSerializer(testimonial, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
         )
 
     def update(self, request, *args, **kwargs):
@@ -97,7 +131,9 @@ class TestimonialViewSet(viewsets.ModelViewSet):
         testimonial = TestimonialService.update_testimonial(
             testimonial, serializer.validated_data
         )
-        return Response(TestimonialSerializer(testimonial).data)
+        return Response(
+            TestimonialSerializer(testimonial, context={"request": request}).data
+        )
 
     def destroy(self, request, *args, **kwargs):
         testimonial = self.get_object()
@@ -122,6 +158,11 @@ class ContactViewSet(
     """
 
     queryset = Contact.objects.all()
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.action == "create":

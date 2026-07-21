@@ -13,7 +13,7 @@ class Product(TimestampedModel):
     name = models.CharField(max_length=255)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.URLField(max_length=500, blank=True)
+    image = models.ImageField(upload_to='products/', blank=True)
     is_featured = models.BooleanField(default=False)
 
     class Meta:
@@ -25,7 +25,7 @@ class Product(TimestampedModel):
 
 class Testimonial(TimestampedModel):
     name = models.CharField(max_length=255, help_text="Name of the person giving the testimonial")
-    image = models.URLField(max_length=500, blank=True)
+    image = models.ImageField(upload_to='testimonials/', blank=True)
     message = models.TextField(help_text="The testimonial message")
 
     class Meta:
