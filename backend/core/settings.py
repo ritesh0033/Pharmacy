@@ -136,6 +136,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    # Add your deployed Vercel URL here if you want the live frontend to be able to
+    # talk to this backend while it's running locally, e.g.:
+    # 'https://your-project.vercel.app',
 ]
 
 REST_FRAMEWORK = {
